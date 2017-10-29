@@ -7,13 +7,27 @@ ARCHIVE_NAME=resources.zip
 TEMPLATE_FILE=sam.yaml
 OUTPUT_TEMPLATE_FILE=serverless-output.yaml
 CAPABILITIES=CAPABILITY_NAMED_IAM
+LIST_S3_BUCKET=$(aws s3 ls "s3://${S3_BUCKET}" 2>&1)
 
 # Create deployment archive
 zip -r ${ARCHIVE_NAME} ${RESOURCES}
 
 
 # Create S3 Lambda bucket
-aws s3 mb s3://${S3_BUCKET} --region ${REGION}
+if [ $? != 0 ]
+then
+  NO_BUCKET_CHECK=$(echo $LIST_S3_BUCKET | grep -c 'NoSuchBucket')
+  if [ $NO_BUCKET_CHECK = 1 ]; then
+    echo "Bucket does not exist, creating bucket..."
+    aws s3 mb s3://${S3_BUCKET} --region ${REGION}
+  else
+    echo "Error checking S3 Bucket"
+    echo ${LIST_S3_BUCKET}
+    exit 1
+  fi
+else
+  echo "Bucket exists, create a new bucket"
+fi
 
 # Package cloudformation template
 aws cloudformation package \
