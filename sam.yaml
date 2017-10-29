@@ -4,12 +4,12 @@ Description: Lambda Compression and Resizer
 Parameters:
   ImageCompressSourceBucket:
     Type: String
-    Default: ''
+    Default: 'lic-originals'
     Description: 'This is the S3 source bucket where the events like uploaded too will invoke the Lambda'
 
   ImageCompressDestinationBucket:
     Type: String
-    Default: ''
+    Default: 'lic-resized'
     Description: 'The destination S3 bucket where images will be transferred too after compressing/resizing'
 
   ImageCompressJPGRatio:
@@ -27,7 +27,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: resources.zip
-      Handler: dist/ImageCompress/Handler.compress
+      Handler: dist/ImageCompress/Handler.imageResize
       Runtime: nodejs6.10
       Environment:
         Variables:
