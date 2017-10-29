@@ -11,6 +11,10 @@ CAPABILITIES=CAPABILITY_NAMED_IAM
 # Create deployment archive
 zip -r ${ARCHIVE_NAME} ${RESOURCES}
 
+
+# Create S3 Lambda bucket
+aws s3 mb s3://${S3_BUCKET} --region ${REGION}
+
 # Package cloudformation template
 aws cloudformation package \
     --template-file ${TEMPLATE_FILE} \
