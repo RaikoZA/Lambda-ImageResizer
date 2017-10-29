@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda Compression and Resizer
+Parameters:
+  ImageCompressSourceBucket:
+    Type: String
+    Default: ''
+    Description: 'This is the S3 source bucket where the events like uploaded too will invoke the Lambda'
+
+  ImageCompressDestinationBucket:
+    Type: String
+    Default: ''
+    Description: 'The destination S3 bucket where images will be transferred too after compressing/resizing'
+
+  ImageCompressJPGRatio:
+    Type: String
+    Default: '0.75'
+    Description: 'Compression ratio for JPG images'
+
+  ImageCompressPNGRatio:
+    Type: String
+    Default: '0.75'
+    Description: 'Compression ratio for PNG images'
+
+Resources:
+  G2AImageCompress:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: resources.zip
+      Handler: dist/ImageCompress/Handler.compress
+      Runtime: nodejs6.10
+      Environment:
+        Variables:
+          SOURCE_BUCKET: !Ref ImageCompressSourceBucket
+          DESTINATION_BUCKET: !Ref ImageCompressDestinationBucket
+          COMPRESS_JPG_RATIO: !Ref ImageCompressJPGRatio
+          COMPRESS_PNG_RATIO: !Ref ImageCompressPNGRatio
