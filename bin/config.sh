@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-SERVICE_NAME=LambdaImageCompressor
-S3_BUCKET=LambdaImageCompressor
+SERVICE_NAME=ImageCompressor
+S3_BUCKET=lambda-image-compress
 AWS_PROFILE=default
 
 AWS_USER=$(aws iam get-user --profile ${AWS_PROFILE} | grep UserName | awk '{print $2}' | sed 's/[",]//g')
