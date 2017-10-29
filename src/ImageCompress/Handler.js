@@ -3,20 +3,19 @@ import im from 'imagemagick'
 import fs from 'fs'
 import path from 'path'
 
-const compressedJpegFileQuality = process.env.COMPRESS_JPG_RATIO
-const compressedPngFileQuality = process.env.COMPRESS_PNG_RATIO
-
 exports.imageResize = (event, context, callback) => {
   const s3 = new aws.S3()
   const sourceBucket = process.env.SOURCE_BUCKET
   const destinationBucket = process.env.DESTINATION_BUCKET
-  const objectKey = event.Records[0].s3.object.key
+  const getEventObjectKey = event.Records[0].s3.object.key
+  const compressedJpegFileQuality = process.env.COMPRESS_JPG_RATIO
+  const compressedPngFileQuality = process.env.COMPRESS_PNG_RATIO
 
-  const mkdirSync = fullDirPath => {
-    const targetDir = fullDirPath
-    const sep = path.sep
-    const initDir = path.isAbsolute(targetDir) ? sep : ''
-    targetDir.split(sep).reduce((parentDir, childDir) => {
+  const createDirectories = fullDirectoryPath => {
+    const targetDirectory = fullDirectoryPath
+    const pathSeparator = path.sep
+    const initDir = path.isAbsolute(targetDirectory) ? pathSeparator : ''
+    targetDirectory.split(pathSeparator).reduce((parentDir, childDir) => {
       const curDir = path.resolve(parentDir, childDir)
       console.log(`Dir Name: ${curDir}`)
       if (!fs.existsSync(curDir)) {
@@ -30,7 +29,7 @@ exports.imageResize = (event, context, callback) => {
 
   const getObjectParams = {
     Bucket: sourceBucket,
-    Key: objectKey
+    Key: getEventObjectKey
   }
 
   s3.getObject(getObjectParams, (getObjectError, data) => {
@@ -39,11 +38,11 @@ exports.imageResize = (event, context, callback) => {
     } else {
       console.log('S3 object retrieval get successful.')
 
-      const resizedFileName = `/tmp/${objectKey}`
+      const resizedFileName = `/tmp/${getEventObjectKey}`
       const splitFileName = resizedFileName.split('/')
       const directories = splitFileName.slice(0, -1).join('/')
 
-      mkdirSync(directories)
+      createDirectories(directories)
 
       let quality
 
@@ -74,7 +73,7 @@ exports.imageResize = (event, context, callback) => {
 
         const uploadParams = {
           Bucket: destinationBucket,
-          Key: objectKey,
+          Key: getEventObjectKey,
           Body: content,
           ContentType: data.ContentType,
           StorageClass: 'STANDARD'
