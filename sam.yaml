@@ -23,7 +23,7 @@ Parameters:
     Description: 'Compression ratio for PNG images'
 
 Resources:
-  G2AImageCompress:
+  ImageCompress:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: resources.zip
