@@ -10,6 +10,16 @@ exports.imageResize = (event, context, callback) => {
   const getEventObjectKey = event.Records[0].s3.object.key
   const compressedJpegFileQuality = process.env.COMPRESS_JPG_RATIO
   const compressedPngFileQuality = process.env.COMPRESS_PNG_RATIO
+  const resolutions = {
+    mobile: {
+      height: '800',
+      width: '600'
+    },
+    desktop: {
+      height: '1024',
+      width: '768'
+    }
+  }
 
   const createDirectories = fullDirectoryPath => {
     const targetDirectory = fullDirectoryPath
@@ -52,39 +62,44 @@ exports.imageResize = (event, context, callback) => {
         quality = compressedJpegFileQuality
       }
 
-      const resizeReq = {
-        width: '1024',
-        height: '728',
-        srcData: data.Body,
-        dstPath: resizedFileName,
-        quality: quality,
-        progressive: true,
-        strip: true,
-        customArgs: ['-sampling-factor', '4:2:0']
-      }
-
-      im.resize(resizeReq, (resizeError, stdout) => {
-        if (resizeError) {
-          throw resizeError
+      Object.keys(resolutions).forEach(res => {
+        const width = resolutions[res].width
+        const height = resolutions[res].height
+        const resizeReq = {
+          width: width,
+          height: height,
+          srcData: data.Body,
+          dstPath: resizedFileName,
+          quality: quality,
+          progressive: true,
+          strip: true,
+          customArgs: ['-sampling-factor', '4:2:0']
         }
 
-        const content = new Buffer(fs.readFileSync(resizedFileName))
-        console.log('Resized filename:', resizedFileName)
-
-        const uploadParams = {
-          Bucket: destinationBucket,
-          Key: getEventObjectKey,
-          Body: content,
-          ContentType: data.ContentType,
-          StorageClass: 'STANDARD'
-        }
-
-        s3.upload(uploadParams, (uploadError, data) => {
-          if (uploadError) {
-            console.log(uploadError, uploadError.stack)
-          } else {
-            console.log('S3 compressed object upload successful.')
+        im.resize(resizeReq, (resizeError, stdout) => {
+          if (resizeError) {
+            throw resizeError
           }
+          const splitFileName = resizedFileName.split('.')
+          const newFileName = `${splitFileName[0]}.${height}-${width}.${splitFileName[1]}`
+          const content = new Buffer(fs.readFileSync(newFileName))
+          console.log('Resized filename:', newFileName)
+
+          const uploadParams = {
+            Bucket: destinationBucket,
+            Key: getEventObjectKey,
+            Body: content,
+            ContentType: data.ContentType,
+            StorageClass: 'STANDARD'
+          }
+
+          s3.upload(uploadParams, (uploadError, data) => {
+            if (uploadError) {
+              console.log(uploadError, uploadError.stack)
+            } else {
+              console.log('S3 compressed object upload successful.')
+            }
+          })
         })
       })
     }
