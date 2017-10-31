@@ -10,22 +10,21 @@ exports.imageResize = (event, context, callback) => {
   const getEventObjectKey = event.Records[0].s3.object.key
   const compressedJpegFileQuality = process.env.COMPRESS_JPG_RATIO
   const compressedPngFileQuality = process.env.COMPRESS_PNG_RATIO
+
   const resolutions = {
     mobile: {
-      height: '800',
       width: '600'
     },
     desktop: {
-      height: '1024',
       width: '768'
     }
   }
 
   const createDirectories = fullDirectoryPath => {
-    const targetDirectory = fullDirectoryPath
     const pathSeparator = path.sep
-    const initDir = path.isAbsolute(targetDirectory) ? pathSeparator : ''
-    targetDirectory.split(pathSeparator).reduce((parentDir, childDir) => {
+    const initDir = path.isAbsolute(fullDirectoryPath) ? pathSeparator : ''
+    fullDirectoryPath.split(pathSeparator).reduce((parentDir, childDir) => {
+      console.log(parentDir, childDir)
       const curDir = path.resolve(parentDir, childDir)
       console.log(`Dir Name: ${curDir}`)
       if (!fs.existsSync(curDir)) {
@@ -51,8 +50,14 @@ exports.imageResize = (event, context, callback) => {
       const resizedFileName = `/tmp/${getEventObjectKey}`
       const splitFileName = resizedFileName.split('/')
       const directories = splitFileName.slice(0, -1).join('/')
+      const splitImageFileName = splitFileName.slice(-1)
+      const fileNameDirectory = splitImageFileName[0].split('.')[0]
 
-      createDirectories(directories)
+      console.log('Resized filename:', resizedFileName)
+      console.log('Split filename:', splitFileName)
+      console.log('Directories:', directories)
+      console.log('Filenamedir:', fileNameDirectory)
+      createDirectories(`${directories}/${fileNameDirectory}`)
 
       let quality
 
@@ -64,10 +69,9 @@ exports.imageResize = (event, context, callback) => {
 
       Object.keys(resolutions).forEach(res => {
         const width = resolutions[res].width
-        const height = resolutions[res].height
+
         const resizeReq = {
           width: width,
-          height: height,
           srcData: data.Body,
           dstPath: resizedFileName,
           quality: quality,
@@ -81,8 +85,12 @@ exports.imageResize = (event, context, callback) => {
             throw resizeError
           }
           const splitFileName = resizedFileName.split('.')
-          const newFileName = `${splitFileName[0]}.${height}-${width}.${splitFileName[1]}`
+          const newFileName = `${splitFileName[0]}.${width}.${splitFileName[1]}`
+
+          createDirectories(`/tmp/${splitFileName[0]}`)
+
           const content = new Buffer(fs.readFileSync(newFileName))
+
           console.log('Resized filename:', newFileName)
 
           const uploadParams = {
