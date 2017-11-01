@@ -2,7 +2,7 @@ import aws from 'aws-sdk'
 import im from 'imagemagick'
 import fs from 'fs'
 import path from 'path'
-import createDirectories from '../lib/CreateDirectories'
+import createDirectories from '../../lib/CreateDirectories'
 
 const config = require('../config.json')
 
@@ -13,6 +13,16 @@ exports.imageResize = (event, context, callback) => {
   const getEventObjectKey = event.Records[0].s3.object.key
   const compressedJpegFileQuality = process.env.COMPRESS_JPG_RATIO
   const compressedPngFileQuality = process.env.COMPRESS_PNG_RATIO
+  const uploadedFileName = `/tmp/${getEventObjectKey}`
+  const splitFileName = uploadedFileName.split('/')
+  const directories = splitFileName.join('/').split('.')
+  const splitImageFileName = splitFileName.slice(-1)
+  const fileNameDirectory = splitImageFileName[0].split('.')[0]
+  const pathParse = path.parse(uploadedFileName)
+  const pathDir = pathParse.dir
+  const parsedExt = pathParse.ext
+
+  let quality
 
   const getObjectParams = {
     Bucket: sourceBucket,
@@ -24,18 +34,9 @@ exports.imageResize = (event, context, callback) => {
       console.log(getObjectError, getObjectError.stack)
     } else {
       console.log('S3 object retrieval get successful.')
-
-      const uploadedFileName = `/tmp/${getEventObjectKey}`
-      const splitFileName = uploadedFileName.split('/')
-      const directories = splitFileName.join('/').split('.')
-      const splitImageFileName = splitFileName.slice(-1)
-      const fileNameDirectory = splitImageFileName[0].split('.')[0]
-
       console.log('File uploaded:', uploadedFileName)
 
       createDirectories(directories[0])
-
-      let quality
 
       if (uploadedFileName.toLowerCase().includes('png')) {
         quality = compressedPngFileQuality
@@ -45,15 +46,12 @@ exports.imageResize = (event, context, callback) => {
 
       Object.keys(config.resolutions).forEach(resolution => {
         const width = config.resolutions[resolution].width
-        const widthName = config.resolutions[resolution].name
-        const pathParse = path.parse(uploadedFileName)
-        const pathDir = pathParse.dir
-        const parsedExt = pathParse.ext
-        const destinationPath = `${pathDir}/${fileNameDirectory}/${widthName}${parsedExt}`
-        const newFileCreated = `${widthName}${parsedExt}`
-        const uploadFileNameObjectKey = `${fileNameDirectory}/${widthName}${parsedExt}`
+        // const widthName = config.resolutions[resolution].name
+        const destinationPath = `${pathDir}/${fileNameDirectory}/${width}${parsedExt}`
+        const newFileCreated = `${width}${parsedExt}`
+        const uploadFileNameObjectKey = `${fileNameDirectory}/${width}${parsedExt}`
 
-        const resizeReq = {
+        const resizeParams = {
           width: width,
           srcData: data.Body,
           dstPath: destinationPath,
@@ -63,7 +61,7 @@ exports.imageResize = (event, context, callback) => {
           customArgs: ['-sampling-factor', '4:2:0']
         }
 
-        im.resize(resizeReq, (resizeError, stdout) => {
+        im.resize(resizeParams, (resizeError, stdout) => {
           if (resizeError) {
             throw resizeError
           }
