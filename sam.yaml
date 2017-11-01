@@ -27,7 +27,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: resources.zip
-      Handler: dist/Services/ImageCompress/Handler.imageResize
+      Handler: dist/src/Services/ImageCompress/Handler.imageResize
       Runtime: nodejs6.10
       Environment:
         Variables:
