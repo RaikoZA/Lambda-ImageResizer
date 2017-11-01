@@ -4,7 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import createDirectories from '../../lib/CreateDirectories'
 
-const config = require('../config.json')
+const config = require('../../config.json')
 
 exports.imageResize = (event, context, callback) => {
   const s3 = new aws.S3()
