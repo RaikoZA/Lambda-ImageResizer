@@ -2,6 +2,9 @@ import aws from 'aws-sdk'
 import im from 'imagemagick'
 import fs from 'fs'
 import path from 'path'
+import createDirectories from '../lib/CreateDirectories'
+
+const config = require('../config.json')
 
 exports.imageResize = (event, context, callback) => {
   const s3 = new aws.S3()
@@ -10,70 +13,6 @@ exports.imageResize = (event, context, callback) => {
   const getEventObjectKey = event.Records[0].s3.object.key
   const compressedJpegFileQuality = process.env.COMPRESS_JPG_RATIO
   const compressedPngFileQuality = process.env.COMPRESS_PNG_RATIO
-
-  const resolutions = {
-    small: {
-      name: 'small',
-      width: '360'
-    },
-    mobile: {
-      name: 'mobile',
-      width: '425'
-    },
-    mobilePlus: {
-      name: 'mobilePlus',
-      width: '480'
-    },
-    maxWidth: {
-      name: 'maxWidth',
-      width: '620'
-    },
-    tablet: {
-      name: 'tablet',
-      width: '768'
-    },
-    tabletPlus: {
-      name: 'tabletPlus',
-      width: '960'
-    },
-    laptop: {
-      name: 'laptop',
-      width: '1024'
-    },
-    monitor: {
-      name: 'monitor',
-      width: '1220'
-    },
-    big: {
-      name: 'big',
-      width: '1440'
-    },
-    bigger: {
-      name: 'bigger',
-      width: '1680'
-    },
-    huge: {
-      name: 'huge',
-      width: '1920'
-    }
-  }
-
-  const createDirectories = fullDirectoryPath => {
-    const pathSeparator = path.sep
-    const initDir = path.isAbsolute(fullDirectoryPath) ? pathSeparator : ''
-    fullDirectoryPath.split(pathSeparator).reduce((parentDir, childDir) => {
-      console.log('Fullpath split:', fullDirectoryPath.split(pathSeparator))
-      console.log('Initdir', initDir)
-      const curDir = path.resolve(parentDir, childDir)
-      console.log(`Dir Name: ${curDir}`)
-      if (!fs.existsSync(curDir)) {
-        console.log('Created')
-        fs.mkdirSync(curDir)
-      }
-
-      return curDir
-    }, initDir)
-  }
 
   const getObjectParams = {
     Bucket: sourceBucket,
@@ -86,41 +25,38 @@ exports.imageResize = (event, context, callback) => {
     } else {
       console.log('S3 object retrieval get successful.')
 
-      const resizedFileName = `/tmp/${getEventObjectKey}`
-      const splitFileName = resizedFileName.split('/')
-      const directoriesold = splitFileName.slice(0, -1).join('/')
+      const uploadedFileName = `/tmp/${getEventObjectKey}`
+      const splitFileName = uploadedFileName.split('/')
       const directories = splitFileName.join('/').split('.')
       const splitImageFileName = splitFileName.slice(-1)
       const fileNameDirectory = splitImageFileName[0].split('.')[0]
 
-      console.log('Resized filename:', resizedFileName)
-      console.log('Split filename:', splitFileName)
-      console.log('Directories:', directories[0], directoriesold)
-      console.log('Filenamedir:', fileNameDirectory)
+      console.log('File uploaded:', uploadedFileName)
 
       createDirectories(directories[0])
 
       let quality
 
-      if (resizedFileName.toLowerCase().includes('png')) {
+      if (uploadedFileName.toLowerCase().includes('png')) {
         quality = compressedPngFileQuality
       } else {
         quality = compressedJpegFileQuality
       }
 
-      Object.keys(resolutions).forEach(res => {
-        const width = resolutions[res].width
-        const widthName = resolutions[res].name
-        const pathParse = path.parse(resizedFileName)
+      Object.keys(config.resolutions).forEach(resolution => {
+        const width = config.resolutions[resolution].width
+        const widthName = config.resolutions[resolution].name
+        const pathParse = path.parse(uploadedFileName)
         const pathDir = pathParse.dir
         const parsedExt = pathParse.ext
-        const newFileName = `${widthName}.${resizedFileName.split('.')}`
+        const destinationPath = `${pathDir}/${fileNameDirectory}/${widthName}${parsedExt}`
+        const newFileCreated = `${widthName}${parsedExt}`
+        const uploadFileNameObjectKey = `${fileNameDirectory}/${widthName}${parsedExt}`
 
         const resizeReq = {
           width: width,
           srcData: data.Body,
-          // dstPath: `${resizedFileName}/${fileNameDirectory}`,
-          dstPath: `${pathDir}/${fileNameDirectory}/${widthName}${parsedExt}`,
+          dstPath: destinationPath,
           quality: quality,
           progressive: true,
           strip: true,
@@ -132,20 +68,17 @@ exports.imageResize = (event, context, callback) => {
             throw resizeError
           }
 
-          console.log('NewFileName', `${widthName}${parsedExt}`)
-          const content = new Buffer(fs.readFileSync(`${pathDir}/${fileNameDirectory}/${widthName}${parsedExt}`))
-          console.log('SplitFileName Func:', splitImageFileName)
-          console.log('Resized filename:', newFileName)
-          console.log(content)
+          console.log('New file created:', newFileCreated)
+          const content = new Buffer(fs.readFileSync(destinationPath))
 
           const uploadParams = {
             Bucket: destinationBucket,
-            Key: `${fileNameDirectory}/${widthName}${parsedExt}`,
+            Key: uploadFileNameObjectKey,
             Body: content,
             ContentType: data.ContentType,
             StorageClass: 'STANDARD'
           }
-          console.log('Object key:', getEventObjectKey)
+
           s3.upload(uploadParams, (uploadError, data) => {
             if (uploadError) {
               console.log(uploadError, uploadError.stack)

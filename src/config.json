@@ -1,0 +1,49 @@
+{
+  "resolutions": {
+    "small": {
+      "name": "small",
+      "width": "360"
+    },
+    "mobile": {
+      "name": "mobile",
+      "width": "425"
+    },
+    "mobilePlus": {
+      "name": "mobilePlus",
+      "width": "480"
+    },
+    "maxWidth": {
+      "name": "maxWidth",
+      "width": "620"
+    },
+    "tablet": {
+      "name": "tablet",
+      "width": "768"
+    },
+    "tabletPlus": {
+      "name": "tabletPlus",
+      "width": "960"
+    },
+    "laptop": {
+      "name": "laptop",
+      "width": "1024"
+    },
+    "monitor": {
+      "name": "monitor",
+      "width": "1220"
+    },
+    "big": {
+      "name": "big",
+      "width": "1440"
+    },
+    "bigger": {
+      "name": "bigger",
+      "width": "1680"
+    },
+    "huge": {
+      "name": "huge",
+      "width": "1920"
+    }
+  },
+
+}
