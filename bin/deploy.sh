@@ -7,7 +7,6 @@ ARCHIVE_NAME=resources.zip
 TEMPLATE_FILE=sam.yaml
 OUTPUT_TEMPLATE_FILE=serverless-output.yaml
 CAPABILITIES=CAPABILITY_NAMED_IAM
-LIST_S3_BUCKET=$(aws s3 ls "s3://${S3_BUCKET}" 2>&1)
 
 # Create deployment archive
 zip -r ${ARCHIVE_NAME} ${RESOURCES}
