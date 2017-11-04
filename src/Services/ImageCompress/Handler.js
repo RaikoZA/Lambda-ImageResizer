@@ -2,6 +2,7 @@ import aws from 'aws-sdk'
 import im from 'imagemagick'
 import fs from 'fs'
 import path from 'path'
+import S3Service from '../S3Service/S3Service'
 import createDirectories from '../../lib/CreateDirectories'
 
 const config = require('../../config.json')
@@ -46,7 +47,6 @@ exports.imageResize = (event, context, callback) => {
 
       Object.keys(config.resolutions).forEach(resolution => {
         const width = config.resolutions[resolution].width
-        // const widthName = config.resolutions[resolution].name
         const destinationPath = `${pathDir}/${fileNameDirectory}/${width}${parsedExt}`
         const newFileCreated = `${width}${parsedExt}`
         const uploadFileNameObjectKey = `${fileNameDirectory}/${width}${parsedExt}`
@@ -77,13 +77,9 @@ exports.imageResize = (event, context, callback) => {
             StorageClass: 'STANDARD'
           }
 
-          s3.upload(uploadParams, (uploadError, data) => {
-            if (uploadError) {
-              console.log(uploadError, uploadError.stack)
-            } else {
-              console.log('S3 compressed object upload successful.')
-            }
-          })
+          S3Service.uploadObject(uploadParams)
+            .then(console.log('S3 compressed the object successfully'))
+            .catch(console.error)
         })
       })
     }
