@@ -1,20 +1,7 @@
-import fs from 'fs'
-import path from 'path'
+import mkdirp from 'mkdirp'
 
-const createDirectories = fullDirectoryPath => {
-  const pathSeparator = path.sep
-  const initDir = path.isAbsolute(fullDirectoryPath) ? pathSeparator : ''
-
-  fullDirectoryPath.split(pathSeparator).reduce((parentDir, childDir) => {
-    const curDir = path.resolve(parentDir, childDir)
-    console.log(`Dir Name: ${curDir}`)
-    if (!fs.existsSync(curDir)) {
-      console.log('Created')
-      fs.mkdirSync(curDir)
-    }
-
-    return curDir
-  }, initDir)
+const createDirectories = directoryPath => {
+  mkdirp(directoryPath, (err, data) => err ? console.log(err) : console.log('Directory created'))
 }
 
 export default createDirectories

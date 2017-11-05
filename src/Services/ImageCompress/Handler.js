@@ -39,8 +39,6 @@ exports.imageResize = (event, context, callback) => {
       console.log('S3 object retrieval get successful.')
       console.log('File uploaded:', uploadedFileName)
 
-      console.log('New directories:', getDirectoryNames)
-
       createDirectories(getDirectoryNames.join('/'))
 
       setImageQuality()
