@@ -15,15 +15,17 @@ exports.imageResize = (event, context, callback) => {
   const compressedJpegFileQuality = process.env.COMPRESS_JPG_RATIO
   const compressedPngFileQuality = process.env.COMPRESS_PNG_RATIO
   const uploadedFileName = `/tmp/${getEventObjectKey}`
-  const splitFileName = uploadedFileName.split('/')
-  const directories = splitFileName.join('/').split('.')
-  const splitImageFileName = splitFileName.slice(-1)
-  const fileNameDirectory = splitImageFileName[0].split('.')[0]
-  const pathParse = path.parse(uploadedFileName)
-  const pathDir = pathParse.dir
-  const parsedExt = pathParse.ext
+  const getFileNameProperties = path.parse(uploadedFileName)
+  const getDirectoryNames = getFileNameProperties.dir.split(path.sep)
+
+  getDirectoryNames.push(getFileNameProperties.name)
 
   let quality
+
+  const fileNameExtension = path.extname(uploadedFileName)
+  const setPngQuality = () => quality = compressedPngFileQuality
+  const setJpgQuality = () => quality = compressedJpegFileQuality
+  const setImageQuality = () => fileNameExtension === '.jpg' ? setJpgQuality() : setPngQuality()
 
   const getObjectParams = {
     Bucket: sourceBucket,
@@ -37,19 +39,17 @@ exports.imageResize = (event, context, callback) => {
       console.log('S3 object retrieval get successful.')
       console.log('File uploaded:', uploadedFileName)
 
-      createDirectories(directories[0])
+      console.log('New directories:', getDirectoryNames)
 
-      if (uploadedFileName.toLowerCase().includes('png')) {
-        quality = compressedPngFileQuality
-      } else {
-        quality = compressedJpegFileQuality
-      }
+      createDirectories(getDirectoryNames.join('/'))
+
+      setImageQuality()
 
       Object.keys(config.resolutions).forEach(resolution => {
         const width = config.resolutions[resolution].width
-        const destinationPath = `${pathDir}/${fileNameDirectory}/${width}${parsedExt}`
-        const newFileCreated = `${width}${parsedExt}`
-        const uploadFileNameObjectKey = `${fileNameDirectory}/${width}${parsedExt}`
+        const destinationPath = `/tmp/${getFileNameProperties.name}/${width}${getFileNameProperties.ext}`
+        const newFileCreated = `${width}${getFileNameProperties.ext}`
+        const uploadFileNameObjectKey = `${getFileNameProperties.name}/${width}${getFileNameProperties.ext}`
 
         const resizeParams = {
           width: width,

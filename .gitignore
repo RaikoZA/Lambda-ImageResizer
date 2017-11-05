@@ -3,6 +3,4 @@ node_modules
 dist/
 npm-debug.log
 serverless-output.yaml
-src/Services/S3Service
-src/Services/ImageMagickService
-
+src/Services/ImageCompress/test.js
