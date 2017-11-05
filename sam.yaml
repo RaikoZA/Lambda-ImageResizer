@@ -31,6 +31,12 @@ Resources:
       Runtime: nodejs6.10
       MemorySize: 1024
       Timeout: 10
+      Events:
+        ImageUpload:
+          Type: S3
+          Properties:
+            Bucket: lic-original
+            Events: s3:ObjectCreated:*
       Environment:
         Variables:
           SOURCE_BUCKET: !Ref ImageCompressSourceBucket
