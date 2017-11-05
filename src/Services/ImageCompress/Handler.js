@@ -1,4 +1,3 @@
-import aws from 'aws-sdk'
 import im from 'imagemagick'
 import fs from 'fs'
 import path from 'path'
@@ -8,7 +7,6 @@ import createDirectories from '../../lib/CreateDirectories'
 const config = require('../../config.json')
 
 exports.imageResize = (event, context, callback) => {
-  const s3 = new aws.S3()
   const sourceBucket = process.env.SOURCE_BUCKET
   const destinationBucket = process.env.DESTINATION_BUCKET
   const getEventObjectKey = event.Records[0].s3.object.key
@@ -27,22 +25,17 @@ exports.imageResize = (event, context, callback) => {
   const setJpgQuality = () => quality = compressedJpegFileQuality
   const setImageQuality = () => fileNameExtension === '.jpg' ? setJpgQuality() : setPngQuality()
 
+  createDirectories(getDirectoryNames.join('/'))
+
+  setImageQuality()
+
   const getObjectParams = {
     Bucket: sourceBucket,
     Key: getEventObjectKey
   }
 
-  s3.getObject(getObjectParams, (getObjectError, data) => {
-    if (getObjectError) {
-      console.log(getObjectError, getObjectError.stack)
-    } else {
-      console.log('S3 object retrieval get successful.')
-      console.log('File uploaded:', uploadedFileName)
-
-      createDirectories(getDirectoryNames.join('/'))
-
-      setImageQuality()
-
+  S3Service.getObject(getObjectParams)
+    .then(data => {
       Object.keys(config.resolutions).forEach(resolution => {
         const width = config.resolutions[resolution].width
         const destinationPath = `/tmp/${getFileNameProperties.name}/${width}${getFileNameProperties.ext}`
@@ -80,6 +73,6 @@ exports.imageResize = (event, context, callback) => {
             .catch(console.error)
         })
       })
-    }
-  })
+    })
+    .catch(console.error)
 }
