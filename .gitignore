@@ -4,3 +4,5 @@ dist/
 npm-debug.log
 serverless-output.yaml
 src/Services/ImageCompress/test.js
+event.json
+template.yaml

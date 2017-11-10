@@ -3,6 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import S3Service from '../S3Service/S3Service'
 import createDirectories from '../../lib/CreateDirectories'
+import clearDirectoryContents from '../../lib/ClearDirectories'
 
 const config = require('../../config.json')
 
@@ -25,6 +26,10 @@ exports.imageResize = (event, context, callback) => {
   const setJpgQuality = () => quality = compressedJpegFileQuality
   const setImageQuality = () => fileNameExtension === '.jpg' ? setJpgQuality() : setPngQuality()
 
+  // Remove contents inside temp directory on AWS Lambda as to not run out of space
+  clearDirectoryContents('/tmp')
+
+  // Create directories for the images
   createDirectories(getDirectoryNames.join('/'))
 
   setImageQuality()
@@ -70,7 +75,7 @@ exports.imageResize = (event, context, callback) => {
 
           S3Service.uploadObject(uploadParams)
             .then(console.log('S3 compressed the object successfully'))
-            .catch(console.error)
+            .catch(uploadError => console.error(uploadError))
         })
       })
     })

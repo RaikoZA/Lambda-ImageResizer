@@ -4,12 +4,12 @@ Description: Lambda Compression and Resizer
 Parameters:
   ImageCompressSourceBucket:
     Type: String
-    Default: 'lic-originals'
+    Default: 'restaurantbanners-original'
     Description: 'This is the S3 source bucket where the events like uploaded too will invoke the Lambda'
 
   ImageCompressDestinationBucket:
     Type: String
-    Default: 'lic-resized'
+    Default: 'restaurantbanners'
     Description: 'The destination S3 bucket where images will be transferred too after compressing/resizing'
 
   ImageCompressJPGRatio:
@@ -29,14 +29,8 @@ Resources:
       CodeUri: resources.zip
       Handler: dist/Services/ImageCompress/Handler.imageResize
       Runtime: nodejs6.10
-      MemorySize: 1024
-      Timeout: 10
-      Events:
-        ImageUpload:
-          Type: S3
-          Properties:
-            Bucket: lic-original
-            Events: s3:ObjectCreated:*
+      MemorySize: 1536
+      Timeout: 20
       Environment:
         Variables:
           SOURCE_BUCKET: !Ref ImageCompressSourceBucket

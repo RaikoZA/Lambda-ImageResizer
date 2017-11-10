@@ -1,7 +1,9 @@
-import mkdirp from 'mkdirp'
+import fs from 'fs-extra'
 
 const createDirectories = directoryPath => {
-  mkdirp(directoryPath, (err, data) => err ? console.log(err) : console.log('Directory created'))
+  fs.ensureDir(directoryPath)
+    .then(console.log('Directory created'))
+    .catch(mkdirError => console.error(mkdirError))
 }
 
 export default createDirectories

@@ -11,7 +11,8 @@
     "install-prod-dependencies": "cp package.json dist/ && cd ./dist && npm install --only=production && cd ../",
     "clean": "rm -rf dist",
     "lint": "eslint src/ test/",
-    "test": "mocha"
+    "test": "mocha",
+    "lambda-run": "npm run build && sam local invoke 'ImageCompress' -e event.json"
   },
   "babel": {
     "presets": [
@@ -34,6 +35,6 @@
   },
   "dependencies": {
     "aws-sdk": "^2.124.0",
-    "mkdirp": "^0.5.1"
+    "fs-extra": "^4.0.2"
   }
 }
