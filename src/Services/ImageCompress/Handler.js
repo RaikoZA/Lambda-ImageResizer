@@ -1,83 +1,38 @@
-import im from 'imagemagick'
-import fs from 'fs'
 import path from 'path'
+import SharpService from '../SharpImageService/SharpImageService'
 import S3Service from '../S3Service/S3Service'
-import createDirectories from '../../lib/CreateDirectories'
 import clearDirectoryContents from '../../lib/ClearDirectories'
 
 const config = require('../../config.json')
 
 exports.imageResize = (event, context, callback) => {
-  const sourceBucket = process.env.SOURCE_BUCKET
-  const destinationBucket = process.env.DESTINATION_BUCKET
   const getEventObjectKey = event.Records[0].s3.object.key
-  const compressedJpegFileQuality = process.env.COMPRESS_JPG_RATIO
-  const compressedPngFileQuality = process.env.COMPRESS_PNG_RATIO
-  const uploadedFileName = `/tmp/${getEventObjectKey}`
-  const getFileNameProperties = path.parse(uploadedFileName)
-  const getDirectoryNames = getFileNameProperties.dir.split(path.sep)
-
-  getDirectoryNames.push(getFileNameProperties.name)
-
-  let quality
-
-  const fileNameExtension = path.extname(uploadedFileName)
-  const setPngQuality = () => quality = compressedPngFileQuality
-  const setJpgQuality = () => quality = compressedJpegFileQuality
-  const setImageQuality = () => fileNameExtension === '.jpg' ? setJpgQuality() : setPngQuality()
+  const getFileNameProperties = path.parse(`/tmp/${getEventObjectKey}`)
+  const fileName = getFileNameProperties.name
+  const fileNameExtension = getFileNameProperties.ext
 
   // Remove contents inside temp directory on AWS Lambda as to not run out of space
   clearDirectoryContents('/tmp')
 
-  // Create directories for the images
-  createDirectories(getDirectoryNames.join('/'))
+  const newFileCreatedMessage = newFile => console.log(`New file created: ${newFile.key}`)
+  const successfulResizedMessage = () => console.log('S3 compressed the object successfully')
+  const getObjectErrorMessage = getObjectError => console.log(`Could not retrieve object from s3: ${getEventObjectKey}`)
+  const uploadErrorMessage = error => console.log(`There was an error uploading: ${error}`)
 
-  setImageQuality()
-
-  const getObjectParams = {
-    Bucket: sourceBucket,
-    Key: getEventObjectKey
-  }
-
-  S3Service.getObject(getObjectParams)
-    .then(data => {
+  S3Service.getObject(getEventObjectKey)
+    .then(objectData => {
       Object.keys(config.resolutions).forEach(resolution => {
         const width = config.resolutions[resolution].width
-        const destinationPath = `/tmp/${getFileNameProperties.name}/${width}${getFileNameProperties.ext}`
-        const newFileCreated = `${width}${getFileNameProperties.ext}`
-        const uploadFileNameObjectKey = `${getFileNameProperties.name}/${width}${getFileNameProperties.ext}`
+        const uploadFileNameObjectKey = `${fileName}/${width}${fileNameExtension}`
+        const imageBufferData = objectData.Body
 
-        const resizeParams = {
-          width: width,
-          srcData: data.Body,
-          dstPath: destinationPath,
-          quality: quality,
-          progressive: true,
-          strip: true,
-          customArgs: ['-sampling-factor', '4:2:0']
-        }
-
-        im.resize(resizeParams, (resizeError, stdout) => {
-          if (resizeError) {
-            throw resizeError
-          }
-
-          console.log('New file created:', newFileCreated)
-          const content = new Buffer(fs.readFileSync(destinationPath))
-
-          const uploadParams = {
-            Bucket: destinationBucket,
-            Key: uploadFileNameObjectKey,
-            Body: content,
-            ContentType: data.ContentType,
-            StorageClass: 'STANDARD'
-          }
-
-          S3Service.uploadObject(uploadParams)
-            .then(console.log('S3 compressed the object successfully'))
-            .catch(uploadError => console.error(uploadError))
-        })
+        SharpService.setImageQuality(fileNameExtension)
+        SharpService.resize(imageBufferData, width)
+          .then(imageBuffer => S3Service.uploadObject(uploadFileNameObjectKey, imageBuffer))
+          .then(newFileCreatedMessage)
+          .then(successfulResizedMessage)
+          .catch(uploadErrorMessage)
       })
     })
-    .catch(console.error)
+    .catch(getObjectErrorMessage)
 }

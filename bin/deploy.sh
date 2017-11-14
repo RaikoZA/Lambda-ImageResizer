@@ -3,13 +3,10 @@
 source $(dirname $0)/config.sh
 
 RESOURCES=dist
-ARCHIVE_NAME=resources.zip
+ARCHIVE_NAME=./lambda/function.zip
 TEMPLATE_FILE=sam.yaml
 OUTPUT_TEMPLATE_FILE=serverless-output.yaml
 CAPABILITIES=CAPABILITY_NAMED_IAM
-
-# Create deployment archive
-zip -r ${ARCHIVE_NAME} ${RESOURCES}
 
 # Create S3 Lambda bucket
 aws s3 mb s3://${S3_BUCKET} --region ${REGION}

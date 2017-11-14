@@ -4,15 +4,16 @@
   "description": "Compresses images via Lambda from and to an S3 bucket",
   "main": "process.js",
   "scripts": {
+    "deploy:sharp": "make all && ./bin/deploy.sh && npm run clean",
     "deploy:stack": "npm run build && ./bin/deploy.sh && npm run clean",
     "remove:stack": "./bin/remove.sh",
     "get-api-url": "./bin/get-api-url.sh",
-    "build": "babel src --out-dir dist --copy-files && npm run install-prod-dependencies",
+    "build": "babel src --out-dir dist --copy-files",
     "install-prod-dependencies": "cp package.json dist/ && cd ./dist && npm install --only=production && cd ../",
     "clean": "rm -rf dist",
     "lint": "eslint src/ test/",
     "test": "mocha",
-    "lambda-run": "npm run build && sam local invoke 'ImageCompress' -e event.json"
+    "lambda-run": "sam local invoke 'ImageCompress' -e event.json"
   },
   "babel": {
     "presets": [
@@ -32,9 +33,5 @@
     "mocha": "3.4.2",
     "sinon": "2.3.6",
     "sinon-chai": "2.11.0"
-  },
-  "dependencies": {
-    "aws-sdk": "^2.124.0",
-    "fs-extra": "^4.0.2"
   }
 }
